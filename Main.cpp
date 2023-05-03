@@ -5,19 +5,24 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <random>
 
 using namespace std;
 
+Cell findCell(string id, vector<vector<Cell>> placement);
 float Cost1(vector<vector<Cell>> placement, vector<Net> paths);
+vector<vector<Cell>> Perturb(vector<vector<Cell>> table);
 
 int main()
 {
-	Cell c("test", 1001);
-	Net n("1st", { "1" });
+	Cell c("test", 1001, 0, 0);
+	Net n(c, { c });
 	string temp;
 	string temp2;
 	int temp3;
 	int count = 0;
+	int colCount = 0;
+	int totalCells = 0;
 	int totalWeight = 0;
 	int curWeight = 0;
 	int numrows = 6;
@@ -31,13 +36,15 @@ int main()
 	string NetTemp2;
 	string NetTemp3;
 	string NetTemp4;
-	vector <string> nodetemp;
+	vector <Cell> nodetemp;
 	int index;
 	vector<Net> templst2;
 	int snt2;
 
 	float curTemperature = 4000000;
 	float finalTemperature = .1;
+
+	srand(time(NULL));
 
 	weights.open("ibm01.are", ios::in);
 	if (weights.fail()) {
@@ -61,11 +68,16 @@ int main()
 	while (!templst.empty())
 	{
 		table.push_back(vector<Cell>());
+		colCount = 0;
 		while (curWeight <= rowWeight && !templst.empty())
 		{
+			templst.back().setR(count);
+			templst.back().setC(colCount);
 			table[count].push_back(templst.back());
 			curWeight += templst.back().getWeight();
 			templst.pop_back();
+			totalCells++;
+			colCount++;
 		}
 		curWeight = 0;
 		count++;
@@ -91,15 +103,14 @@ int main()
 				n.setNodes(nodetemp);
 				nodetemp.clear();
 				templst2.push_back(n);
-				n.setFirstNode(NetTemp2);
+				n.setFirstNode(findCell(NetTemp2, table));
 			}
 			else {
-
-				n.setFirstNode(NetTemp2);
+				n.setFirstNode(findCell(NetTemp2, table));
 			}
 		}
 		else {
-			nodetemp.push_back(NetTemp2);
+			nodetemp.push_back(findCell(NetTemp2, table));
 
 		}
 
@@ -107,6 +118,7 @@ int main()
 	}
 	n.setNodes(nodetemp);
 	templst2.push_back(n);
+	cout << "nets recorded" << endl;
 	//for (int i = 0; i < templst2.size(); i++) {
 	//	// Printing the element at
 	//	// index 'i' of vector
@@ -115,57 +127,71 @@ int main()
 	//		cout << j << endl;
 	//	}
 	//}
-	
-	//vector<Net> paths;
-	//vector<string> ends;
-	//ends.push_back("a2");
-	//ends.push_back("a3");
-	//Net a("a1", ends);
-	//paths.push_back(a);
+
 	cout << Cost1(table, templst2) << endl;
+
+	while (curTemperature > finalTemperature)
+	{
+		for (int i = 0; i < (totalCells * 800); i++)
+		{
+
+		}
+	}
+}
+
+Cell findCell(string id, vector<vector<Cell>> placement)
+{
+	for (int j = 0; j < placement.size(); j++) // finds coords of starting Cell
+	{
+		for (int k = 0; k < placement[j].size(); k++)
+		{
+			if (placement[j][k].getId() == id)
+			{
+				return placement[j][k];
+			}
+		}
+	}
+	cout << "ERROR - findCell found nothing" << endl;
+	return Cell();
 }
 
 float Cost1(vector<vector<Cell>> placement, vector<Net> paths)
 {
-	float totalLen = 0; //return value, sum of all net lengths
-	float curLen; //length of currently computed net
-	string stNode; //starting Cell of current Net
-	int stRow, stCol; //coords of starting Cell in placement table
-	int curRow, curCol; //coords 0f current endpoint Cell in placement table
-	int rowDif, colDif; // difference in coordinates between start and end
+	float totalLen = 0;
+	float curLen, rowDif, colDif;
+	Cell strNode;
 	for (Net i : paths)// for every Net object in vector
 	{
-		stNode = i.getFirstNode();
-		for (int j = 0; j < placement.size(); j++) // finds coords of starting Cell
+		strNode = i.getFirstNode();
+		for (Cell j : i.getNodes()) //for every Cell that starting Cell is connected to
 		{
-			for (int k = 0; k < placement[j].size(); k++)
-			{
-				if (placement[j][k].getId() == stNode)
-				{
-					stRow = j;
-					stCol = k;
-				}
-			}
-		}
-
-		for (string j : i.getNodes()) //for every Cell that starting Cell is connected to
-		{
-			for (int k = 0; k < placement.size(); k++) // find coords of endpoint Cell
-			{
-				for (int l = 0; l < placement[k].size(); l++)
-				{
-					if (placement[k][l].getId() == j)
-					{
-						curRow = k;
-						curCol = l;
-					}
-				}
-			}
-			rowDif = abs(stRow - curRow) + 1; //calculate abs value of difference in coords
-			colDif = abs(stCol - curCol) + 1; //+1 is used to ensure value is never 0
+			rowDif = abs(j.getR() - strNode.getR()) + 1; //calculate abs value of difference in coords
+			colDif = abs(j.getC() - strNode.getC()) + 1; //+1 is used to ensure value is never 0
 			curLen = rowDif * colDif; //calcualate a value to represent length of net
 			totalLen += curLen; //add to summation of all net lengths
 		}
 	}
 	return totalLen;
+}
+
+vector<vector<Cell>> Perturb(vector<vector<Cell>> table)
+{
+	int randomRow1, randomCol1, randomRow2, randomCol2;
+	int randomChoice;
+	vector<vector<Cell>> newTable;
+
+	newTable = table;
+	randomRow1 = rand() % table.size();
+	randomCol1 = rand() % table[randomRow1].size();
+	Cell cell = newTable[randomRow1][randomCol1];
+	randomChoice = rand() % 2;
+	if (randomChoice == 0)
+	{
+
+	}
+	else
+	{
+
+	}
+	return newTable;
 }
