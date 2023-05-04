@@ -6,11 +6,15 @@
 #include <fstream>
 #include <math.h>
 #include <random>
+#include <algorithm>
+#include <map>
 
 using namespace std;
 
 Cell findCell(string id, vector<vector<Cell>> placement);
+Cell findCell2(string id, map<string, Cell> &hash);
 float Cost1(vector<vector<Cell>> placement, vector<Net> paths);
+float Cost3(vector<vector<Cell>> placement);
 vector<vector<Cell>> Perturb(vector<vector<Cell>> table);
 
 int main()
@@ -29,6 +33,7 @@ int main()
 	int rowWeight;
 	vector<Cell> templst;
 	vector<vector<Cell>> table;
+	map<string, Cell> hash;
 	ifstream weights;
 	ifstream nets;
 
@@ -75,6 +80,8 @@ int main()
 			templst.back().setC(colCount);
 			table[count].push_back(templst.back());
 			curWeight += templst.back().getWeight();
+			hash.insert(pair<string, Cell>(templst.back().getId(), templst.back()));
+			//cout << hash.begin() ->first << endl;
 			templst.pop_back();
 			totalCells++;
 			colCount++;
@@ -93,24 +100,24 @@ int main()
 	while (getline(nets, NetTemp))
 	{
 
-		NetTemp2 = NetTemp.substr(0, NetTemp.find(" "));
+		NetTemp2 = NetTemp.substr(0, NetTemp.find(" ")); //id
 		snt2 = NetTemp2.size();
 		index = snt2 + 1;
 		//index = NetTemp.find(snt2+1 );
-		NetTemp4 = NetTemp.substr(index, 1);
+		NetTemp4 = NetTemp.substr(index, 1); // s or l
 		if (NetTemp4 == "s") {
 			if (!nodetemp.empty()) {
 				n.setNodes(nodetemp);
 				nodetemp.clear();
 				templst2.push_back(n);
-				n.setFirstNode(findCell(NetTemp2, table));
+				n.setFirstNode(findCell2(NetTemp2, hash));
 			}
 			else {
-				n.setFirstNode(findCell(NetTemp2, table));
+				n.setFirstNode(findCell2(NetTemp2, hash));
 			}
 		}
 		else {
-			nodetemp.push_back(findCell(NetTemp2, table));
+			nodetemp.push_back(findCell2(NetTemp2, hash));
 
 		}
 
@@ -155,6 +162,24 @@ Cell findCell(string id, vector<vector<Cell>> placement)
 	return Cell();
 }
 
+Cell findCell2(string id, map<string, Cell> &hash)
+{
+	//for (auto& it : hash) 
+	//{
+	//	if (it.first == id) 
+	//	{
+	//		//cout << it.second.getWeight() << endl;
+	//		return it.second;
+	//	}
+	//}
+	if (hash.count(id) ) {
+		cout << hash[id].getWeight() << endl;
+		return hash[id];
+	}
+	cout << "ERROR - findCell found nothing" << endl;
+	return Cell();
+}
+
 float Cost1(vector<vector<Cell>> placement, vector<Net> paths)
 {
 	float totalLen = 0;
@@ -194,4 +219,27 @@ vector<vector<Cell>> Perturb(vector<vector<Cell>> table)
 
 	}
 	return newTable;
+}
+
+float Cost3(vector<vector<Cell>> placement) {
+	float max;
+	float min;
+	float temp = 0;
+	float dif;
+	//6 rows
+	vector<float> totalweight;
+	for (int i = 0; i < placement.size(); i++) {
+		temp = 0;
+		for (int j = 0; j < placement[0].size(); j++) {
+			temp = temp + placement[i][j].getWeight();
+		}
+		totalweight.push_back(temp);
+	}
+
+	//finding minimum  & maximum element
+	min = 1; //min_element(totalweight.begin(), totalweight.end());
+	max = 1; //max_element(totalweight.begin(), totalweight.end());
+	dif = max - min;
+	return dif;
+
 }
