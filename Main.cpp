@@ -13,8 +13,11 @@ using namespace std;
 
 Cell findCell(string id, vector<vector<Cell>> placement);
 Cell findCell2(string id, map<string, Cell> &hash);
-float Cost1(vector<vector<Cell>> placement, vector<Net> paths);
-float Cost3(vector<vector<Cell>> placement);
+float Cost1(vector<vector<Cell>> placement, vector<Net> paths); //total nets
+float Cost2(vector<vector<Cell>> placement, vector<Net> paths); //critical net
+float Cost3(vector<vector<Cell>> placement); //row difference
+float Cost4(vector<vector<Cell>> placement, vector<Net> paths); //congestion
+float normalizeCost(float c1, float c2, float c3, float maxC1, float maxC2, float maxC3);
 vector<vector<Cell>> Perturb(vector<vector<Cell>> table);
 
 int main()
@@ -48,6 +51,8 @@ int main()
 
 	float curTemperature = 4000000;
 	float finalTemperature = .1;
+	float maxCost1, maxCost2, maxCost3;
+	float curCost, newCost;
 
 	srand(time(NULL));
 
@@ -135,15 +140,23 @@ int main()
 	//	}
 	//}
 
-	cout << Cost1(table, templst2) << endl;
+	//cout << Cost1(table, templst2) << endl;
+	//cout << Cost2(table, templst2) << endl;
+	//cout << Cost3(table) << endl;
+	cout << Cost4(table, templst2) << endl;
 
-	while (curTemperature > finalTemperature)
-	{
-		for (int i = 0; i < (totalCells * 800); i++)
-		{
+	//make the max Costs so we can normalize and compare later
+	maxCost1 = Cost1(table, templst2);
+	maxCost2 = Cost2(table, templst2);
+	maxCost3 = Cost3(table);
+	curCost = normalizeCost(maxCost1, maxCost2, maxCost3, maxCost1, maxCost2, maxCost3);
+	//while (curTemperature > finalTemperature)
+	//{
+	//	for (int i = 0; i < (totalCells * 800); i++)
+	//	{
 
-		}
-	}
+	//	}
+	//}
 }
 
 Cell findCell(string id, vector<vector<Cell>> placement)
@@ -164,16 +177,8 @@ Cell findCell(string id, vector<vector<Cell>> placement)
 
 Cell findCell2(string id, map<string, Cell> &hash)
 {
-	//for (auto& it : hash) 
-	//{
-	//	if (it.first == id) 
-	//	{
-	//		//cout << it.second.getWeight() << endl;
-	//		return it.second;
-	//	}
-	//}
 	if (hash.count(id) ) {
-		cout << hash[id].getWeight() << endl;
+//		cout << hash[id].getWeight() << endl;
 		return hash[id];
 	}
 	cout << "ERROR - findCell found nothing" << endl;
@@ -199,6 +204,125 @@ float Cost1(vector<vector<Cell>> placement, vector<Net> paths)
 	return totalLen;
 }
 
+float Cost2(vector<vector<Cell>> placement, vector<Net> paths)
+{
+	float maxLen = 0;
+	float curLen, rowDif, colDif;
+	Cell strNode;
+	for (Net i : paths)// for every Net object in vector
+	{
+		strNode = i.getFirstNode();
+		for (Cell j : i.getNodes()) //for every Cell that starting Cell is connected to
+		{
+			rowDif = abs(j.getR() - strNode.getR()) + 1; //calculate abs value of difference in coords
+			colDif = abs(j.getC() - strNode.getC()) + 1; //+1 is used to ensure value is never 0
+			curLen = rowDif * colDif;
+			if (curLen > maxLen)
+				maxLen = curLen;
+		}
+	}
+	return maxLen;
+}
+
+float Cost3(vector<vector<Cell>> placement) {
+	float max;
+	float min;
+	float temp = 0;
+	float dif;
+	//6 rows
+	vector<float> totalweight;
+	for (int i = 0; i < placement.size(); i++) {
+		temp = 0;
+		for (int j = 0; j < placement[0].size(); j++) {
+			temp = temp + placement[i][j].getWeight();
+		}
+		totalweight.push_back(temp);
+		cout << temp << endl;
+	}
+
+	//finding minimum  & maximum element
+	min = *min_element(totalweight.begin(), totalweight.end());
+	max = *max_element(totalweight.begin(), totalweight.end());
+	dif = max - min;
+	cout << dif << endl;
+	return dif;
+
+}
+
+float Cost4(vector<vector<Cell>> placement, vector<Net> paths)
+{
+	vector<vector<int>> netAmt; //amount of nets in various regions
+	Cell strNode;
+	int maxVal = 0;
+	int maxRow = 0;
+
+	for (int i = 0; i < placement.size(); i++)
+	{
+		cout << placement[i].size() << endl;
+		if (placement[i].size() > maxRow)
+			maxRow = placement[i].size();
+	}
+	cout << maxRow << endl;
+	int colCutoff = (maxRow / 6) + 1;
+	cout << maxRow / colCutoff << endl;
+	cout << maxRow / (colCutoff + 1) << endl;
+
+	netAmt =
+	{
+		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},
+	};
+
+	for (Net i : paths)// for every Net object in vector
+	{
+		strNode = i.getFirstNode();
+		for (Cell j : i.getNodes()) //for every Cell that starting Cell is connected to
+		{
+			for (int k = fmin(strNode.getR(), j.getR()); k < fmax(strNode.getR(), j.getR()); k++)
+			{
+				netAmt[k][fmin((strNode.getC() / colCutoff), (j.getC() / colCutoff))]++;
+			}
+			for (int l = fmin((strNode.getC() / colCutoff), (j.getC() / colCutoff)); l <= fmax((strNode.getC() / colCutoff), (j.getC() / colCutoff)); l++)
+			{
+				netAmt[fmax(strNode.getR(), j.getR())][l]++;
+			}
+			/*cout << "starting region: " << strNode.getR() << ", " << (strNode.getC()/colCutoff) << endl;
+			cout << "ending region: " << j.getR() << ", " << (j.getC() / colCutoff) << endl;
+			for (int x = 0; x < 6; x++)
+			{
+				for (int y = 0; y < 6; y++)
+					cout << netAmt[x][y];
+				cout << endl;
+			}*/
+		}
+	}
+
+	for (int x = 0; x < 6; x++)
+	{
+		for (int y = 0; y < 6; y++)
+		{
+			if(netAmt[x][y] > maxVal)
+				maxVal = netAmt[x][y];
+			cout << netAmt[x][y] << ", ";
+		}
+		cout << endl;
+	}
+
+	return maxVal;
+}
+
+float normalizeCost(float c1, float c2, float c3, float maxC1, float maxC2, float maxC3)
+{
+	float normC1 = c1 / maxC1;
+	float normC2 = c2 / maxC2;
+	float normC3 = c3 / maxC3;
+	return (normC1 + normC2 + normC3);
+}
+
 vector<vector<Cell>> Perturb(vector<vector<Cell>> table)
 {
 	int randomRow1, randomCol1, randomRow2, randomCol2;
@@ -219,27 +343,4 @@ vector<vector<Cell>> Perturb(vector<vector<Cell>> table)
 
 	}
 	return newTable;
-}
-
-float Cost3(vector<vector<Cell>> placement) {
-	float max;
-	float min;
-	float temp = 0;
-	float dif;
-	//6 rows
-	vector<float> totalweight;
-	for (int i = 0; i < placement.size(); i++) {
-		temp = 0;
-		for (int j = 0; j < placement[0].size(); j++) {
-			temp = temp + placement[i][j].getWeight();
-		}
-		totalweight.push_back(temp);
-	}
-
-	//finding minimum  & maximum element
-	min = 1; //min_element(totalweight.begin(), totalweight.end());
-	max = 1; //max_element(totalweight.begin(), totalweight.end());
-	dif = max - min;
-	return dif;
-
 }
