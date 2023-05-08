@@ -111,20 +111,6 @@ int main()
 
 	cout << "nets set" << endl;
 
-	//for (int i = 0; i < templst2.size(); i++) {
-	//	// Printing the element at
-	//	// index 'i' of vector
-	//	cout << templst2[i].getFirstNode().getId() << endl;
-	//	for (Cell j : templst2[i].getNodes()) {
-	//		cout << j.getId() << endl;
-	//	}
-	//}
-
-	//cout << Cost1(table, templst2) << endl;
-	//cout << Cost2(table, templst2) << endl;
-	//cout << Cost3(table) << endl;
-	//cout << Cost4(table, templst2) << endl;
-
 	//make the max Costs so we can normalize and compare later
 	maxCost1 = Cost1(table, templst2);
 	maxCost2 = Cost2(table, templst2);
@@ -352,14 +338,6 @@ float Cost4(vector<vector<Cell>> placement, vector<Net> paths)
 			{
 				netAmt[fmax(strNode.getR(), j.getR())][l]++;
 			}
-			//cout << "starting region: " << strNode.getR() << ", " << (strNode.getC()/colCutoff) << endl;
-			//cout << "ending region: " << j.getR() << ", " << (j.getC() / colCutoff) << endl;
-			//for (int x = 0; x < 6; x++)
-			//{
-			//	for (int y = 0; y < 6; y++)
-			//		cout << netAmt[x][y];
-			//	cout << endl;
-			//}
 		}
 	}
 
