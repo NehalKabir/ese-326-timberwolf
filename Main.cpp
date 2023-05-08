@@ -23,6 +23,7 @@ float Cost4(vector<vector<Cell>> placement, vector<Net> paths); //congestion
 float normalizeCost(float c1, float c2, float c3, float c4, float maxC1, float maxC2, float maxC3, float maxC4);
 float increaseProbability(float deltaC, float temp);
 float tempSchedule(float curTemperature);
+void printstuff1(vector<vector<Cell>> placement);
 vector<vector<Cell>> Perturb(vector<vector<Cell>> table);
 
 int main()
@@ -61,7 +62,7 @@ int main()
 
 	srand(time(NULL));
 
-	weights.open("ibm01.are", ios::in);
+	weights.open("ibm02.are", ios::in);
 	if (weights.fail()) {
 		cerr << "This file does not exist." << endl;
 	};
@@ -161,6 +162,7 @@ int main()
 		curTemperature = tempSchedule(curTemperature);
 		cout << curCost << ", " << curTemperature << endl;
 	}
+	printstuff1(table);
 }
 
 Cell findCell(string id, vector<vector<Cell>> placement)
@@ -211,7 +213,7 @@ vector<Net> updateNets(vector<vector<Cell>> placement, map<string, Cell>& hash)
 	int snt2;
 	ifstream nets;
 	
-	nets.open("ibm01.net", ios::in);
+	nets.open("ibm02.net", ios::in);
 	if (nets.fail()) {
 		cerr << "This file does not exist." << endl;
 	};
@@ -477,4 +479,28 @@ float tempSchedule(float curTemperature)
 		newTemp = curTemperature * .8;
 
 	return newTemp;
+}
+
+void printstuff1(vector<vector<Cell>> placement)
+{
+	int rowW = 0;
+
+	ofstream MyFile("output1.txt");
+	for (int i = 0; i < placement.size(); i++) {
+		rowW = 0;
+
+		for (int j = 0; j < placement[i].size(); j++) {
+			if (placement[i][j].getId()[0] == 'p') {
+				MyFile << placement[i][j].getR() << " " << rowW << " " << placement[i][j].getWeight() << endl;
+				rowW++;
+			}
+			else {
+				MyFile << placement[i][j].getR() << " " << rowW << " " << placement[i][j].getWeight() << endl;
+
+				rowW += placement[i][j].getWeight();
+			}
+		}
+
+	}
+	MyFile.close();
 }
